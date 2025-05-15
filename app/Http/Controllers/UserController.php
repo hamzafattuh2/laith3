@@ -10,7 +10,7 @@ class UserController extends Controller
 {
 
     public function get1(){
-        return "ssadasd";
+        return "user/home doing perfecctlyyyyy";
     }
     public function register(Request $request)
     {

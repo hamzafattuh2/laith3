@@ -44,6 +44,10 @@ return [
         'driver' => 'sanctum',
         'provider' => 'tour_guides',
     ],
+    'api' => [
+        'driver' => 'sanctum',
+        'provider' => 'users',
+    ],
     ],
 
 

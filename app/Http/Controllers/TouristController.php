@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB; // أضف هذا السطر
 use Illuminate\Support\Facades\Hash; // أضف هذا السطر
 use Illuminate\Http\Request;
+use App\Notifications\TwoFactorCode;
+
 
 class TouristController extends Controller
 {
@@ -60,8 +62,11 @@ class TouristController extends Controller
                 'birth_date' => $validatedData['birth_date']?? null,
 
             ]);
+
+            $token = $user->createToken('tourist_auth_token')->plainTextToken;
             $user->generateCode();
 
+            // $user->notify(new TwoFactorCode());
             // إنشاء السائح في جدول tourists
             $tourist = Tourist::create([
                 'user_id' => $user->id,
@@ -73,12 +78,17 @@ class TouristController extends Controller
             // إتمام المعاملة
             DB::commit();
 
-            return response()->json([
+            return response()->json([[
                 'message' => 'Tourist registered successfully',
                 'user' => $user,
                 'tourist' => $tourist,
                 'profile_picture_url' => $profilePicturePath ? asset('storage/'.$profilePicturePath) : null
-            ], 201);
+            ],
+            ['access_token' => $token,
+            'token_type' => 'Bearer'
+             ]
+            ],
+            201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
@@ -117,8 +127,13 @@ class TouristController extends Controller
                 ], 401);
             }
 
+
+
             // إنشاء توكن جديد
             $token = $tourist->createToken('tourist_auth_token')->plainTextToken;
+            $tourist->generateCode();
+
+            // $tourist->notify(new TwoFactorCode());
 
             return response()->json([
                 'message' => 'Login successful',

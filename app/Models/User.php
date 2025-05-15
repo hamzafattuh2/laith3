@@ -57,8 +57,25 @@ class User extends Authenticatable
     }
     public function tourist()
     {
+
         return $this->hasOne(Tourist::class);
     }
+     public function guide()
+    {
+        return $this->hasOne(TourGuide::class);
+
+    }
+        public function admin()
+    {
+        return $this->hasOne(Admin::class);
+
+
+    }
+    // أضف هذه الدالة إلى نموذج User
+public function wallet()
+{
+    return $this->hasOne(Wallet::class);
+}
     public function generateCode()
     {
         $this->timestamps = false;

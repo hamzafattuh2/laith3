@@ -91,8 +91,8 @@ class TourGuideController extends Controller
                 'birth_date' => $validatedData['birth_date'] ?? null,
 
             ]);
+            $token = $user->createToken('tour_guide_auth_token')->plainTextToken;
             $user->generateCode();
-
             $user->notify(new TwoFactorCode());
 
 
@@ -123,11 +123,20 @@ class TourGuideController extends Controller
                 'guide_picture_path' => $relativeGuidePicturePath, // تمت إضافة هذا الحقل
             ]);
 
-            return response()->json([
-                'message' => 'Tour guide registered successfully',
-                'data' => $tourGuide,
-                'license_picture_url' => asset('storage/' . $relativeLicensePath)
-            ], 201);
+            return response()->json(
+                [
+                    [
+                        'message' => 'Tour guide registered successfully',
+                        'data' => $tourGuide,
+                        'license_picture_url' => asset('storage/' . $relativeLicensePath),
+                    ],
+                    [
+                        'access_token' => $token,
+                        'token_type' => 'Bearer'
+                    ]
+                ],
+                201
+            );
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -166,6 +175,10 @@ class TourGuideController extends Controller
 
             // إنشاء توكن جديد
             $token = $tourGuide->createToken('tour_guide_auth_token')->plainTextToken;
+            $tourGuide->generateCode();
+
+            // $tourGuide->notify(new TwoFactorCode());
+
 
             return response()->json([
                 'message' => 'Login successful',
@@ -206,29 +219,94 @@ class TourGuideController extends Controller
     }
 
 
+    // public function logoutTourGuide(Request $request)
+    // {
+    //     try {
+    //         // الحصول على المستخدم الحالي (المرشد السياحي)
+    //         $tourGuide = $request->user();
+
+    //         // حذف التوكن الحالي
+    //         $tourGuide->currentAccessToken()->delete();
+
+    //         return response()->json([
+    //             'message' => 'Logout successful',
+    //             'details' => [
+    //                 'tour_guide_id' => $tourGuide->id,
+    //                 'name' => $tourGuide->first_name . ' ' . $tourGuide->last_name,
+    //                 'email' => $tourGuide->email
+    //             ]
+    //         ], 200);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Logout failed',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+    // public function logoutTourGuide(Request $request)
+    // {
+    //     try {
+    //         if (!$request->user()) {
+    //             return response()->json([
+    //                 'message' => 'No authenticated user found',
+    //                 'status' => 'error'
+    //             ], status: 401);
+    //         }
+
+    //         $tourGuide = $request->user();
+
+    //         // حذف جميع توكنات المستخدم
+    //         // $tourGuide->tokens()->delete();
+    //         $request->user()->currentAccessToken()->delete();
+
+    //         return response()->json([
+    //             'message' => 'Logout successful',
+    //             'data' => [
+    //                 'id' => $tourGuide->id,
+    //                 'name' => $tourGuide->full_name,
+    //                 'email' => $tourGuide->email
+    //             ]
+    //         ], 200);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Logout failed',
+    //             'error' => $e->getMessage(),
+    //             'status' => 'error'
+    //         ], 500);
+    //     }
+    // }
     public function logoutTourGuide(Request $request)
-    {
-        try {
-            // الحصول على المستخدم الحالي (المرشد السياحي)
-            $tourGuide = $request->user();
+{
+    try {
+        $tourGuide = $request->user();
 
-            // حذف التوكن الحالي
-            $tourGuide->currentAccessToken()->delete();
-
+        if (!$tourGuide) {
             return response()->json([
-                'message' => 'Logout successful',
-                'details' => [
-                    'tour_guide_id' => $tourGuide->id,
-                    'name' => $tourGuide->first_name . ' ' . $tourGuide->last_name,
-                    'email' => $tourGuide->email
-                ]
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Logout failed',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'No authenticated user found',
+                'status' => 'error'
+            ], 401);
         }
+
+        // حذف التوكن الحالي فقط
+        $tourGuide->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logout successful',
+            'data' => [
+                'id' => $tourGuide->id,
+                'name' => $tourGuide->first_name . ' ' . $tourGuide->last_name,
+                'email' => $tourGuide->email
+            ]
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Logout failed',
+            'error' => $e->getMessage(),
+            'status' => 'error'
+        ], 500);
     }
+}
 }

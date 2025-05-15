@@ -25,32 +25,65 @@ class TwoFactorController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    // public function store(Request $request)
+    // {
+    //     // الحصول على بيانات المستخدم الحالي المسجل الدخول
+    //     $user = auth()->user();
+
+    //     /**
+    //      * التحقق من تطابق كود التحقق المدخل مع الكود المخزن في قاعدة البيانات
+    //      *
+    //      * 1. $request->input('code') - الحصول على كود التحقق من بيانات الطلب
+    //      * 2. $user->code - الكود المخزن في سجل المستخدم
+    //      */
+    //     if ($request->input('code') == $user->code) {
+    //         // إذا كان الكود صحيحاً:
+
+    //         // 1. إعادة تعيين كود التحقق (مسحه بعد الاستخدام)
+    //         $user->resetCode();
+
+    //         // 2. توجيه المستخدم إلى لوحة التحكم
+    //         return redirect()->route('dashboard');
+
+    //         // ملاحظة: يمكن إضافة رسالة نجاح إذا أردت:
+    //         // return redirect()->route('dashboard')->with('success', 'تم التحقق بنجاح');
+    //     }
+
+    //     // إذا كان الكود غير صحيح:
+    //     // إعادة توجيه المستخدم للصفحة السابقة مع عرض رسالة الخطأ
+    //     return redirect()->back()->withErrors(['code' => 'كود التحقق غير صحيح']);
+    // }
+
     public function store(Request $request)
     {
-        // الحصول على بيانات المستخدم الحالي المسجل الدخول
+        $request->validate([
+            'code' => 'required|digits:4'
+        ]);
+
         $user = auth()->user();
 
-        /**
-         * التحقق من تطابق كود التحقق المدخل مع الكود المخزن في قاعدة البيانات
-         *
-         * 1. $request->input('code') - الحصول على كود التحقق من بيانات الطلب
-         * 2. $user->code - الكود المخزن في سجل المستخدم
-         */
         if ($request->input('code') == $user->code) {
-            // إذا كان الكود صحيحاً:
-
-            // 1. إعادة تعيين كود التحقق (مسحه بعد الاستخدام)
             $user->resetCode();
 
-            // 2. توجيه المستخدم إلى لوحة التحكم
-            return redirect()->route('dashboard');
+            // إرجاع رد مختلف لطلبات API
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'تم التحقق بنجاح',
+                    'verified' => true
+                ]);
+            }
 
-            // ملاحظة: يمكن إضافة رسالة نجاح إذا أردت:
-            // return redirect()->route('dashboard')->with('success', 'تم التحقق بنجاح');
+            return redirect()->route('dashboard');
         }
 
-        // إذا كان الكود غير صحيح:
-        // إعادة توجيه المستخدم للصفحة السابقة مع عرض رسالة الخطأ
+        // إرجاع رد مختلف لطلبات API
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'كود التحقق غير صحيح',
+                'verified' => false
+            ], 422);
+        }
+
         return redirect()->back()->withErrors(['code' => 'كود التحقق غير صحيح']);
     }
 
